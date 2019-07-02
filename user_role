@@ -1,0 +1,34 @@
+---
+ - name: Create password
+   tags:
+           - users
+   shell: "pwgen 20 1 | makepasswd -s --method=sha-512"
+   register: pswd
+   delegate_to: 127.0.0.1
+
+ - name: debug
+   tags: users
+   debug:
+           var: pswd.stdout
+
+ - name: Create user
+   tags: users
+   user:
+           name: "{{username}}"
+           password: "{{pswd.stdout}}"
+           group: users
+           shell: "/bin/bash"
+
+ - name: Create folder .ssh at /home
+   file:
+           path: /home/{{username}}/.ssh
+           state: directory
+
+
+ - name: Move key
+   tags: users
+   copy:
+           src: /root/roles/users/file/manager_key.pub
+           dest: /home/{{username}}/.ssh/
+
+
