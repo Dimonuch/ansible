@@ -1,0 +1,29 @@
+---
+- name: Install docker key
+  tags:
+          - install-docker-key
+  apt_key:
+          url: "https://download.docker.com/linux/debian/gpg"
+          state: present
+
+- name: Add docker repository
+  tags:
+          - install-docker-repo
+  apt_repository:
+          repo: "deb [arch=amd64] https://download.docker.com/linux/debian stretch stable"
+          state: present
+
+- name: Add repo into cache
+  tags:
+          - add-docker-cache
+  become: true
+  apt:
+          name: "docker"
+          state: latest
+          update_cache: true
+          #force_apt_get: true
+
+- name: latest install docker
+  apt:
+          name: "docker-ce"
+          state: latest
