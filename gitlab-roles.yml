@@ -1,0 +1,54 @@
+---
+- name: Download script repository gitlab
+  tags: gitlab
+  get_url:
+          url: https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh
+          dest: /tmp/script.deb.sh
+          mode: 0755
+
+- name: Run script
+  tags: gitlab
+  shell: /tmp/script.deb.sh
+
+- name: Install gitlab-ce
+  tags: gitlab
+  apt:
+          name: gitlab-ce
+          state: latest
+          update_cache: yes
+
+- name: Create ssl
+  tags: gitlab
+  file:
+          path: "/etc/gitlab/ssl"
+          state: directory
+
+- name: Copy SSL certificate and key
+  tags: gitlab
+  copy:
+          src: "{{item}}"
+          dest: "/etc/gitlab/ssl"
+          force: yes
+  with_items:
+          - gitlab.devops-lab.info.crt
+          - gitlab.devops-lab.info.key
+
+- name: Copy gitlab.rb with registry configuration
+  tags: gitlab
+  template:
+          src: gitlab.rb.j2
+          dest: /etc/gitlab/gitlab.rb
+          force: yes
+  when: configure_registry is defined
+
+- name: Configure hostname
+  tags: gitlab
+  replace:
+          path: "/etc/gitlab.rb/gitlab.rb"
+          regexp: "external_url.*"
+          replace: "external_url 'https://{{inventory_hostname}}'"
+  when: configure_registry is not defined
+
+- name: Reconfigure gitlab
+  tags: gitlab
+  command: gitlab-ctl reconfigure
