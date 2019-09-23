@@ -1,0 +1,28 @@
+---
+- hosts: all
+  roles:
+            - basic
+
+- hosts: gitlab
+  roles:
+          - gitlab
+          
+- hosts: jenkins
+  roles:
+          - java
+          - jenkins
+
+- hosts: docker
+  roles:
+          - docker
+
+- hosts: elk
+  roles:
+          - elk
+          - syslog-ng
+          - basic
+          - java
+
+- hosts: syslog-ng-client
+  roles:
+          - syslog-ng-client
