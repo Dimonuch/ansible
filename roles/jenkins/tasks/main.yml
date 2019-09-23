@@ -1,0 +1,81 @@
+---
+
+# The role works for both master and slaves.
+# Variable "role: master|slave" should be set
+# for appropriate groups in group_vars catalog.
+# File authorized_keys should contain a public key
+# of jenkins user of the jenkins master host. Of course,
+# the key pair should be generated before.
+
+- name: Install default-jre
+  tags: jenkins
+  apt:
+    name: default-jre
+    update_cache: yes
+
+- name: Add jenkins repository key
+  tags: jenkins
+  become: true
+  apt_key:
+    url: "https://pkg.jenkins.io/debian/jenkins.io.key"
+    state: present
+  when: role == "master"
+
+- name: Add jenkins repository
+  tags: jenkins
+  apt_repository:
+    repo: "deb http://pkg.jenkins.io/debian-stable binary/"
+    filename: "jenkins"
+    state: present
+  when: role == "master"
+
+- name: Install jenkins
+  tags: jenkins
+  apt:
+    name: jenkins
+    update_cache: yes
+  when: role == "master"
+
+- name: Just a little pause
+  tags:
+    - jenkins
+    - init
+  pause:
+    seconds: 5
+  when: role == "master"
+
+- name: Figure out initialAdminPassword
+  tags:
+    - jenkins
+    - init
+  shell: "cat /var/lib/jenkins/secrets/initialAdminPassword"
+  register: Jenkins_Initial_Admin_Password
+  ignore_errors: True
+  when: role == "master"
+
+- name: Echo initialAdminPassword
+  tags: jenkins
+  debug:
+    var: Jenkins_Initial_Admin_Password.stdout
+  when: role == "master"
+
+- name: Add user jenkins on slave node
+  tags: jenkins
+  user:
+    name: jenkins
+  when: role == "slave"
+
+- name: Create /home/jenkins/.ssh/ directory on slave node
+  tags: jenkins
+  file:
+    path: "/home/jenkins/.ssh"
+    state: directory
+  when: role == "slave"
+
+- name: Copy authorized_keys to slave node
+  tags: jenkins
+  lineinfile:
+    path: "/home/jenkins/.ssh/authorized_keys"
+    line: "{{jenkins_master_pubkey}}"
+    create: yes
+  when: role == "slave"
