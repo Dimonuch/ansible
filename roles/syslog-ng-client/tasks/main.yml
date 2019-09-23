@@ -1,0 +1,23 @@
+---
+- name: Remove rsyslog
+  tags: syslog-ng-client
+  apt:
+    name: rsyslog
+    state: absent
+
+- name: Install syslog-ng
+  tags: syslog-ng-client
+  apt:
+    name: syslog-ng
+    state: latest
+
+- name: Copy configs
+  tags: syslog-ng-client
+  copy:
+    src: "{{item.src}}"
+    dest: "{{item.dest}}"
+    force: yes
+  with_items:
+    - {src: "syslog-ng.conf", dest: "/etc/syslog-ng/syslog-ng.conf"}
+    - {src: "params.conf", dest: "/etc/syslog-ng/conf.d/params.conf"}
+  notify: restart syslog-ng
