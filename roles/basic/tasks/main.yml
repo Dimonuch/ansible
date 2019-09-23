@@ -1,0 +1,56 @@
+---
+- name: Correct sources.list
+  tags: basic
+  replace:
+    path: /etc/apt/sources.list
+    regexp: "^deb cdrom"
+    replace: "#deb cdrom"
+  ignore_errors: true
+
+- name: Install soft
+  tags: basic
+  apt:
+    name: "{{pkg}}"
+    state: latest
+    update_cache: true
+  vars:
+    pkg:
+      - vim
+      - curl
+      - telnet
+      - screen
+      - iputils-ping
+      - wget
+      - unzip
+      - ca-certificates
+      - apt-transport-https
+
+- name: Configure {{hostname}}
+  tags:
+    - basic
+    - hostname
+  command: "hostname {{inventory_hostname}}"
+
+- name: Insert {{hostname}} into /etc/hostname
+  tags:
+    - basic
+    - hostname
+  template:
+    src: hostname.j2
+    dest: /etc/hostname
+    force: yes
+
+      #  lineinfile:
+      #    line: "{{inventory_hostname}}"
+      #    state: present
+      #    dest: "/etc/hostname"
+
+- name: Correct files
+  tags: basic
+  lineinfile:
+    regexp: "{{item.regexp}}"
+    line: "{{item.line}}"
+    dest: "{{item.dest}}"
+  with_items:
+    - {regexp: "\\#precedence ::ffff:0:0/96  100", line: "precedence ::ffff:0:0/96  100", dest: "/etc/gai.conf"}
+    - {regexp: "^\"syntax.*", line: "syntax on", dest: "/etc/vim/vimrc"}
