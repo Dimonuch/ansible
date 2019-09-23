@@ -1,0 +1,24 @@
+---
+- name: Remove rsyslog
+  tags: syslog-ng
+  apt:
+    name: rsyslog
+    state: absent
+
+- name: Install syslog-ng and syslog-ng-mod-elasticsearch
+  tags: syslog-ng
+  apt:
+    name: syslog-ng
+    state: latest
+    update_cache: yes
+
+- name: Copy config
+  tags: syslog-ng
+  copy:
+    src: "{{item.src}}"
+    dest: "{{item.dest}}"
+    force: yes
+  with_items:
+    - {src: "params.conf", dest: "/etc/syslog-ng/conf.d/"}
+    - {src: "syslog-ng.conf", dest: "/etc/syslog-ng/"}
+  notify: restart syslog-ng
