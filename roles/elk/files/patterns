@@ -1,0 +1,15 @@
+# Lua servers
+NGUSERNAME [a-zA-Z\.\@\-\+_%]+
+NGUSER %{NGUSERNAME}
+NGINXACCESS %{SYSLOGTIMESTAMP:syslog_timestamp} %{IPORHOST:clientip} %{SYSLOGPROG:syslog_program}: (%{DATA} )?(%{NGUSER:user}|-) (%{NGUSER:auth}|-) \[%{HTTPDATE:timestamp}\] "%{WORD:method} %{URIPATHPARAM:request} HTTP/%{NUMBER:httpversion}" %{NUMBER:response} (?:%{NUMBER:bytes}|-) (?:"(?:%{URI:referrer}|-)"|%{QS:referrer}) %{QS:agent}
+TS %{YEAR}(/|-)%{MONTHNUM}(/|-)%{MONTHDAY}
+
+# Fronts
+FRONT_NGINXACCESS %{SYSLOGTIMESTAMP} %{IPORHOST:clientip} %{DATA:syslog_program} \[%{HTTPDATE:original_timestamp}\] %{NUMBER:response} (?:%{NUMBER:bytes}|-)(%{GREEDYDATA})?(,)?(%{SPACE})?(?:%{BASE16FLOAT:upstream_response_time}|-) (?:%{BASE16FLOAT:request_time}|-) "(?<hostname>.*?)" "(?:%{NOTSPACE:uri}|-)" ("%{WORD:method} %{NOTSPACE:request}(?: HTTP/%{NUMBER:httpversion})"|"(?<request>.*?)") "(?<referer>.*?)" "(?<useragent>.*?)" "(?<redirect_location>.*?)" (?:"(?<upstream>.*?)")?
+
+NGINXERROR %{TS:date} %{TIME:time} \[%{LOGLEVEL:nginx_severity}\] %{GREEDYDATA:nginx_message}
+
+SYSLOGSTD %{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:logsource} %{SYSLOGPROG:syslog_program}(:)? (?:%{LOGLEVEL:severity}: )?%{GREEDYDATA:syslog_message}
+
+# Symfony
+SYMFONY %{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:logsource} %{SYSLOGPROG:syslog_program}\[%{TS:date}\]: %{TIME:time}\](:)? %{DATA}.%{LOGLEVEL:severity}: %{GREEDYDATA:syslog_message}
