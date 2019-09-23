@@ -1,0 +1,14 @@
+cluster.name: logserver
+node.name: "{{ inventory_hostname }}"
+network.host: ["127.0.0.1",_site_]
+#network.host: ["127.0.0.1",_global_]   -  if used global site
+http.port: 9200
+gateway.recover_after_nodes: 1
+transport:
+  tcp:
+    connect_timeout: 5m
+    compress: true
+indices:
+  memory.index_buffer_size: 10%
+  recovery.max_bytes_per_sec: 100mb
+thread_pool.bulk.queue_size: 512
