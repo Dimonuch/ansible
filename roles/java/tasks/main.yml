@@ -1,0 +1,6 @@
+---
+- name: Install java
+  tags: java
+  apt:
+    name: default-jre
+    state: "installed"
