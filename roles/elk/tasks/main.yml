@@ -1,0 +1,101 @@
+---
+- name: Install nginx
+  tags:
+    - elk
+  apt:
+    name: nginx
+    state: latest
+    update_cache: yes
+
+- name: Copy nginx config
+  tags:
+    - elk
+  copy:
+    src: your_domain_name.conf
+    dest: /etc/nginx/sites-enabled/
+    force: yes
+
+- name: Install python-passlib
+  tags:
+    - elk
+  apt:
+    name: python-passlib
+    state: latest
+
+- name: Create user/password for kibana
+  tags:
+    - elk
+  htpasswd:
+    path: /etc/nginx/htpasswd
+    name: admin
+    password: "admin"
+    owner: root
+    mode: 0644
+  notify: restart nginx
+
+- name: Copy elasticsearch and kibana deb packages
+  tags:
+    - elk
+  copy:
+    src: "{{item}}"
+    dest: /root
+  with_items:
+    - elasticsearch-5.4.0.deb
+    - kibana-5.4.0-amd64.deb
+    - logstash-5.4.0.deb
+
+- name: Install elasticsearch and kibana
+  tags:
+    - elk
+  apt:
+    deb: "{{item}}"
+  with_items:
+    - /root/elasticsearch-5.4.0.deb
+    - /root/kibana-5.4.0-amd64.deb
+    - /root/logstash-5.4.0.deb
+  ignore_errors: true
+
+- name: Copy elasticsearch.yml
+  tags:
+    - elk-cp-conf
+    - elk
+  template:
+    src: elasticsearch.yml.j2
+    dest: /etc/elasticsearch/elasticsearch.yml
+    force: yes
+
+- name: Copy configs
+  tags:
+    - elk-cp-conf
+    - elk
+  copy:
+    src: "{{item.src}}"
+    dest: "{{item.dest}}"
+    force: yes
+  with_items:
+    - {src: "kibana.yml", dest: "/etc/kibana/"}
+    - {src: "input.conf", dest: "/etc/logstash/conf.d/"}
+    - {src: "output.conf", dest: "/etc/logstash/conf.d/"}
+    - {src: "filter.conf", dest: "/etc/logstash/conf.d/"}
+    - {src: "patterns", dest: "/etc/logstash/patterns/"}
+
+- name: Tune jvm.options
+  tags:
+    - elk-tune-jvm
+    - elk
+  replace:
+    path: /etc/elasticsearch/jvm.options
+    regexp: "{{item.regexp}}"
+    replace: "{{item.replace}}"
+  with_items:
+    - {regexp: "^-Xms2g", replace: "-Xms2g"}
+    - {regexp: "^-Xmx2g", replace: "-Xmx2g"}
+
+- name: Restart services
+  tags:
+    - elk
+  command: "{{item}}"
+  with_items:
+    - systemctl restart elasticsearch.service
+    - systemctl restart logstash.service
+    - systemctl restart kibana.service
